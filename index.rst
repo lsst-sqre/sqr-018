@@ -54,6 +54,8 @@
 SQuaRE’s JupyterLab Demo
 ========================
 
+This is an "evolving strawman design" document based on prototyping activities undertaken by SQuaRE to support Science Platform development.
+
 Glossary
 --------
 
@@ -61,7 +63,7 @@ Glossary
 -  JupyterHub is a server for spawning Jupyter notebooks and now JupyterLab environments
 -  Kubernetes is a container orchestration platform.
 -  GKE (Google Container Engine) is a cloud-hosted kubernetes service.
--  SP: A DM unit of work; there are 7.5 SPs in a typical developer week.
+-  Story Point: A DM unit of work; there are 7.5 SPs in a typical developer week.
 
 
 Timeline Overview
@@ -72,16 +74,20 @@ Timeline Overview
 2017-04-13:
   At this point (2017-04-13) Adam Thornton, who is SQuaRE’s point engineer for Jupyter activities, has spent 19 SPs on this epic. Our technical target was to produce a JupyterLab environment provisioned by the automatic weekly build of a Docker container distribution of the LSST stack (lsst\_distrib). Allowances were made regarding JupyterLab’s alpha status. Our overall goal was to give ourselves a JupyterLab environment where we could prototype Science Platform user services (e.g. Notebooks as documentation) and verification activities (Notebook verification reports).
 
+2017-04-27:
+  We are closing the first DM-9984 after 30 SPs and opening DM-10387 to continue. We now have a workable deployment for alpha-testers (only lacking persistant storage) for (relative) stability and an architecture that includes a kubernetes deployment of Hub spinning off Labs in individual pods (for scaling), shim OAuth, shim Unix uid/gid, and a kernel based on a Docker container automatically produced by CI. Oh and this technote. KSK out of sheer enthusiasm makes a set of killer demo videos based on a stack notebook and DS9 visualisation.
+
 SQuaRE Technical Status
 -----------------------
 
-In fact, we had a very positive experience. At this point we have:
+At the most recent point in the timeline above, we have:
 
 -  An experimental sandbox at jupyterlabdemo.lsst.codes (*not* a stable service; frequently redeployed with no notice; functionality subject to change).
 -  A Dockerfile for installing JupyterHub and JupyterLab components onto our LSST stack container and exposing the stack kernel to Jupyter.
 -  A Kubernetes configuration to deploy this service on the GKE cluster.
--  Our deployment involves JupyterHub spawning a single JupyterLab process per user in SQuaRE’s container.
--  Authentication to this service via SQuaRE’s usual “shim” authentication mechanism that uses Github organization membership for OAuth authentication (in operations this shim will be replaced by the NCSA authentication service which is not currently available to us).
+-  Our deployment involves JupyterHub spawning Jupyterlabs in individual pods based on a SQuaRE’s CI-built Docker container dinstribution of the stack.
+-  Authentication to this service via SQuaRE’s usual “shim” authentication mechanism that uses Github organization membership for OAuth authentication
+- Consistent Unix uid/gid mapping for users using Github as a shim (your user id is your github id, your groups are the orgs you belong to). 
 -  We do not currently have persistent storage configured for this service, which we would have to provide if we were to use the GKE deployment as a developer service.
 
 
@@ -89,9 +95,26 @@ In fact, we had a very positive experience. At this point we have:
 	:name: fig-arch
 
 
+SQuaRE’s next steps
+-------------------
 
-SQuaRE’s next step
-------------------
+- With alpha-testers beating on our door, a modest amount of persistant storage to allow them to keep their notebooks around between re-deploys
 
-Since we (unexpectedly) have SPs still available in this epic, we intend to investigate scaling of this service. Our strawman approach is to accomplish this by having JupyterHub spawning multiple Kubernetes pods. Each pod would have a JupyterLab process running inside its own container. I regard scaling as an important area of technical risk to be addressed before committing to this technology (unlike, say, persistent storage, which is a solved problem that just needs implementation).
+- Investigate addressing usability concerns (github-based workflows)
 
+- Deploy the current sandbox to demo (waiting for the missing icon fix)
+
+
+Repositories
+------------
+
+Code repos for system:
+
+https://github.com/lsst-sqre/jupyterlabdemo :
+	(JupyterLab container provisioning and Kubernetes cofig)
+https://github.com/lsst-sqre/k8s-jupyterlabdemo-nginx :
+	(proxy and Kubernetes config)
+https://github.com/lsst-sqre/ghowlauth :
+	(authenticator)
+
+ 
