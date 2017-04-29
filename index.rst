@@ -66,17 +66,6 @@ Glossary
 -  Story Point: A DM unit of work; there are 7.5 SPs in a typical developer week.
 
 
-Timeline Overview
------------------
-2017-03:
-  In the S17-B cycle (March-May 2017) I allocated a timebox of 30 story points (4 person-weeks) to get SQuaRE familiar with the JupyterLab environment. JupyterLab is still in alpha but after talking extensively to one of the leaders of the project (Brian Granger) in February we felt the platform was mature enough to try prototyping with and the seemingly best techological target for the Science Platform. This work is covered under the SQuaRE epic `DM-9984 <https://jira.lsstcorp.org/browse/DM-9984>`__.
-
-2017-04-13:
-  At this point (2017-04-13) Adam Thornton, who is SQuaRE’s point engineer for Jupyter activities, has spent 19 SPs on this epic. Our technical target was to produce a JupyterLab environment provisioned by the automatic weekly build of a Docker container distribution of the LSST stack (lsst\_distrib). Allowances were made regarding JupyterLab’s alpha status. Our overall goal was to give ourselves a JupyterLab environment where we could prototype Science Platform user services (e.g. Notebooks as documentation) and verification activities (Notebook verification reports).
-
-2017-04-27:
-  We are closing the first DM-9984 after 30 SPs and opening DM-10387 to continue. We now have a workable deployment for alpha-testers (only lacking persistant storage) for (relative) stability and an architecture that includes a kubernetes deployment of Hub spinning off Labs in individual pods (for scaling), shim OAuth, shim Unix uid/gid, and a kernel based on a Docker container automatically produced by CI. Oh and this technote. KSK out of sheer enthusiasm makes a set of killer demo videos based on a stack notebook and DS9 visualisation.
-
 SQuaRE Technical Status
 -----------------------
 
@@ -95,7 +84,22 @@ At the most recent point in the timeline above, we have:
 	:name: fig-arch
 
 
-SQuaRE’s next steps
+Timeline Overview
+-----------------
+2017-03:
+  In the S17-B cycle (March-May 2017) I allocated a timebox of 30 story points (4 person-weeks) to get SQuaRE familiar with the JupyterLab environment. JupyterLab is still in alpha but after talking extensively to one of the leaders of the project (Brian Granger) in February we felt the platform was mature enough to try prototyping with and the seemingly best techological target for the Science Platform. This work is covered under the SQuaRE epic `DM-9984 <https://jira.lsstcorp.org/browse/DM-9984>`__.
+
+2017-04-13:
+  At this point (2017-04-13) Adam Thornton, who is SQuaRE’s point engineer for Jupyter activities, has spent 19 SPs on this epic. Our technical target was to produce a JupyterLab environment provisioned by the automatic weekly build of a Docker container distribution of the LSST stack (lsst\_distrib). Allowances were made regarding JupyterLab’s alpha status. Our overall goal was to give ourselves a JupyterLab environment where we could prototype Science Platform user services (e.g. Notebooks as documentation) and verification activities (Notebook verification reports).
+
+2017-04-27:
+  We are closing the first DM-9984 after 30 SPs and opening DM-10387 to continue. We now have a workable deployment for alpha-testers (only lacking persistant storage) for (relative) stability and an architecture that includes a kubernetes deployment of Hub spinning off Labs in individual pods (for scaling), shim OAuth, shim Unix uid/gid, and a kernel based on a Docker container automatically produced by CI. Oh and this technote. KSK out of sheer enthusiasm makes a set of killer demo videos based on a stack notebook and DS9 visualisation.
+
+2017-04-28:
+  We are now producing Docker 3 containers from CI and deploying them to our Lab. The KSK notebook ran great. Investigating a bug in the auth context for spun pods.
+
+		   
+Coming Soon-ish
 -------------------
 
 - With alpha-testers beating on our door, a modest amount of persistant storage to allow them to keep their notebooks around between re-deploys
@@ -103,12 +107,15 @@ SQuaRE’s next steps
 - Investigate addressing usability concerns (github-based workflows)
 
 - Deploy the current sandbox to demo (waiting for the missing icon fix)
+  
 
 
 Repositories
 ------------
 
 Code repos for system:
+
+
 
 https://github.com/lsst-sqre/jupyterlabdemo :
 	(JupyterLab container provisioning and Kubernetes cofig)
