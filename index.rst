@@ -77,8 +77,8 @@ At the most recent point in the timeline above, we have:
 -  Our deployment involves JupyterHub spawning Jupyterlabs in individual pods based on a SQuaRE’s CI-built Docker container dinstribution of the stack.
 -  Authentication to this service via SQuaRE’s usual “shim” authentication mechanism that uses Github organization membership for OAuth authentication
 - Consistent Unix uid/gid mapping for users using Github as a shim (your user id is your github id, your groups are the orgs you belong to). 
--  We do not currently have persistent storage configured for this service, which we would have to provide if we were to use the GKE deployment as a developer service.
-
+- We have a modest amount of persistent storage via an NFS pod to allow alpha-testers to keep notebooks around in between redeployments.
+  
 
 .. figure:: /_static/jupyterlab.png
 	:name: fig-arch
@@ -96,18 +96,26 @@ Timeline Overview
   We are closing the first DM-9984 after 30 SPs and opening DM-10387 to continue. We now have a workable deployment for alpha-testers (only lacking persistant storage) for (relative) stability and an architecture that includes a kubernetes deployment of Hub spinning off Labs in individual pods (for scaling), shim OAuth, shim Unix uid/gid, and a kernel based on a Docker container automatically produced by CI. Oh and this technote. KSK out of sheer enthusiasm makes a set of killer demo videos based on a stack notebook and DS9 visualisation.
 
 2017-04-28:
-  We are now producing Docker 3 containers from CI and deploying them to our Lab. The KSK notebook ran great. Investigating a bug in the auth context for spun pods.
+  We are now producing Docker Python 3 containers from CI and deploying them to our Lab. The KSK notebook ran great. Investigating a bug in the auth context for spun pods.
 
+2017-05-02:
+  The "missing icons" and "missing Hub menu" issue turned out to be an issue mixing-and-matching node.js modules across packages (which is a known issue upstream and the plugin system is being revisited as a result). 
+  
+2017-05-09:
+  We have added a modest amount of persistent storage (NSF pod) to avoid inconveniencing alpha-testers with perennially re-uploading their notebooks and data sets in between redeploys. We have also added a log out button and improved server shutdown.
+
+2017-05-09:
+  The demo instance is up to date with the features in the sandbox instance. 
 		   
 Coming Soon-ish
 -------------------
 
-- With alpha-testers beating on our door, a modest amount of persistant storage to allow them to keep their notebooks around between re-deploys
+- We're looking into how we can provide a multiple choice of
+  containers to users (eg. with different versions of the stack). This
+  does mean shifting the kernel selection step up into Hub (right now
+  it's at the Lab pod level).
 
 - Investigate addressing usability concerns (github-based workflows)
-
-- Deploy the current sandbox to demo (waiting for the missing icon fix)
-  
 
 
 Repositories
