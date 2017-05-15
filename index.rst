@@ -132,4 +132,9 @@ https://github.com/lsst-sqre/k8s-jupyterlabdemo-nginx :
 https://github.com/lsst-sqre/ghowlauth :
 	(authenticator)
 
+Related
+-------
+
+https://github.com/lsst-dm/sciplat-examples :
+	(Some example demos contributed by DM science staf)
  
