@@ -123,8 +123,6 @@ Repositories
 
 Code repos for system:
 
-
-
 https://github.com/lsst-sqre/jupyterlabdemo :
 	(JupyterLab container provisioning and Kubernetes cofig)
 https://github.com/lsst-sqre/k8s-jupyterlabdemo-nginx :
@@ -138,3 +136,89 @@ Related
 https://github.com/lsst-dm/sciplat-examples :
 	(Some example demos contributed by DM science staf)
  
+Science Platform Design Discussion and Forward Look
+===================================================
+
+The JupyterLab service is an integral part of the Science Platform which, among other things, is expected to be the primary interface to the DM SubSystem for the LSST System Scientist and their commissioning team. As such, it goes beyond a standalone notebook service and has a number of critical interfaces to other components of the DM (and LSST) system.
+
+The main interfaces are:
+
+- Interfaces to data such as the Butler and DAX
+  
+- Interface to the "batch" system
+
+- Interface to the Engineering Facilities Database (EFD)
+
+- Interface to the authentication/authorisation system
+
+- Interface to persistent storage
+
+Additionally, we expect the following services to need to become "notebook aware":
+
+- Documentation (LtD): Notebooks to be offered as a first class form for reports and playbook type documentation.
+
+- CI/release engineering: As notebooks are a critical part of software infrastructure through their role in commissioning, they need to have a workflow similar to normal code, such as continuous integration, versioned deployment, etc.
+
+Additionally, as the notebook platform is now a primary user interface into the DM system, its scaling requirements need to be revisited compared to the optional "Level 3" service it replaced. 
+
+This section captures SQuaRE's current thinking on these issues pending a formal architectural baseline being achieved. A milestone table summarising the target dates for meeting the various interfaces is given at the end.
+
+Major Issues
+------------
+
+- Interface to the EFD
+
+  It is a primary requirement of the commissioning team to cross-correlate image data with readouts stored in the EFD. These are later ingested in the main database and can be accessible via DAX. However we strongly feel that for usability reasons (and managing the limited resources of the commissioning cluster) the same notebook should be able to run at the datacenter Jupyter deployment that can run on the commissioning cluster and vice versa. The two obvious ways of achieving this are:
+
+  - request a generalised python interface to both;
+
+  - have the EFD data be availabe through the DAX in timescales short enough to satisfy the commissioning team and only support one way of accessing EFD data. 
+
+  We strongly favour the latter approach but it has implications on other parts of the DM Subsystem that need to be discussed.
+
+- Intereface to the batch system: Right now the baseline is that some kind of user intervention will have to happen to go from a satisfactory notebook to running the same code over large datasets through the batch system. This presents significant usability challenges. If the workflow system would present an interface that allows optimized idempotent execution of notebooks ("you just asked me to do a job with this configuration and these inputs; I recognise that I have already executed such a job so I will return the results to you right away as a no-op") the usability will be vastly improved. We do not know whether such an interface can be provided at this stage. 
+
+
+Deployment and Scaling
+----------------------
+
+- We need to settle on a system for managing our kubernetes applications. This is likely to be Helm.
+
+- We will move to automatically provisioning the Hub notebook spin-up menu with the latest LSST containers. 
+
+- We should specify minimum requirements for K8 cluster per user, and reach an estimate of the number of uses at various phases of the project.
+
+  - # of cores scaled by number of concurrent users
+  - # of memory scaled by numbers of concurrent users
+  - # user-private persistent storage by total users
+  - project-shared persistent storage total users or fixed
+  - # node-local non-persistent storage (for the containers) fixed
+
+- Integration with datacenter-side persistent storage (GPFS?)
+
+- Integration with datacenter-side auth
+
+  - map of Github ID to NCSA ID (identity mgt)
+  - hopefully we can avoid people authing twice but we likely need Github auth for repo operations so    they might have to
+
+
+	
+The JupyterLab Platform and Verification
+----------------------------------------
+
+- "New face of SQuaSH" interface: Following the adoption of the Jupyterlab Platform and the involvement of SQuaRE's WBS, we need to consolidate the functionality of the front end that is currently being served by the Django portal into the JupyterLab platform as much as possible as we don't have sufficient effort to maintain two different user interfaces, and the JupyterLab one is likely to be superior in functionality. However we have not yet investigating dashboarding under JupyterLab and might revise this plan.
+
+- Telemetry Gateway: while this is not currently an interface to JupyterLab (but rather to SQuaSH), in the event that notebook execution is used to compute metrics that are needed at the summit, the same mechanism that is used for SQuaSH may be required here. Potentially this uncovers an interface to the Telemetry Gateway but we are not certain at this point.
+
+
+Integration with Developer/User Services
+----------------------------------------
+
+- Verication report generation/publication harness
+  - (LtD support for notebooks)
+
+- Production hardening: During commissioning rapid partial or whole re-deployment of assets is likely to be needed frequently and/or at short notice. While we are designing with this in mind, we have a target date for demonstrating this capability and improving on any bottlenecks (which may be in other components, in particular the CI chain). 
+
+
+Milestones
+----------
