@@ -125,10 +125,14 @@ Code repos for system:
 
 https://github.com/lsst-sqre/jupyterlabdemo :
 	(JupyterLab container provisioning and Kubernetes cofig)
-https://github.com/lsst-sqre/k8s-jupyterlabdemo-nginx :
-	(proxy and Kubernetes config)
 https://github.com/lsst-sqre/ghowlauth :
 	(authenticator)
+https://github.com/lsst-sqre/kubespawner :
+	(Kubernetes container spawner)
+https://github.com/lsst-sqre/labkubespawner :
+	(JupyterLab side of container spawner)
+https://github.com/lsst-sqre/jupyterlab-savequit :
+        (JupyterLab Save-and-Exit menu)
 
 Related
 -------
@@ -186,14 +190,6 @@ Deployment and Scaling
 
 - We will move to automatically provisioning the Hub notebook spin-up menu with the latest LSST containers. 
 
-- We should specify minimum requirements for K8 cluster per user, and reach an estimate of the number of uses at various phases of the project.
-
-  - # of cores scaled by number of concurrent users
-  - # of memory scaled by numbers of concurrent users
-  - # user-private persistent storage by total users
-  - project-shared persistent storage total users or fixed
-  - # node-local non-persistent storage (for the containers) fixed
-
 - Integration with datacenter-side persistent storage (GPFS?)
 
 - Integration with datacenter-side auth
@@ -201,8 +197,97 @@ Deployment and Scaling
   - map of Github ID to NCSA ID (identity mgt)
   - hopefully we can avoid people authing twice but we likely need Github auth for repo operations so    they might have to
 
+Required Resources
+------------------
 
-	
+We specify the resources required as a function of users, with the
+expectation that the current design scales well to about 100 users; if
+there are many more users than that, we may need to reevaluate our
+choices.  That would be a nice problem to have someday.
+
+- We need a Kubernetes cluster to which we have admin access.  The
+  cluster administrator will need to be able to create all types of
+  Kubernetes resources: persistent volumes and claims, deployments,
+  configmaps, and daemonsets in particular.  During normal operation, it
+  will frequently be required to replace environment variables and
+  perhaps configmaps in order to expose new Lab builds.  The Hub pod
+  must be able to dynamically create and destroy Lab pods.
+
+- We require some amount of CPU capacity per concurrent user.  As a rule
+  of thumb, a half CPU core guaranteed per pod (which would imply a
+  minimum of 50 CPUs for the JupyterLab portion of the cluster if we
+  have 100 concurrent users) with an upper limit of four cores seems
+  about right.  For computation that requires more than four cores, we
+  probably want to be encouraging use of the batch system rather than
+  the interactive notebook.
+
+- Memory limits can also be specified.  No lower bound and an upper
+  bound of perhaps 8GB per user Lab container seems appropriate,
+  although without a better understanding of the actual workload, that
+  may need adjustment.  Again, for much larger jobs, we would suggest
+  use of batch rather than notebook.
+
+- Those two previous constraints taken together seem to indicate that an
+  appropriate VM size for a node is something like 6 cores and 16GB.
+  From the Lab perspective, we really don't care: as long as the
+  resources are available, lots of small machines versus a few enormous
+  ones is fairly immaterial, since Kubernetes abstracts the resources
+  away.
+
+- Each user needs some amount of persistent storage for notebooks and
+  workspace.  50-100GB per user is probably adequate, although it is my
+  suspicion a few users will use much more and most users will use
+  almost nothing.  I think the most economical way to keep everyone
+  happy is to provision a fairly large shared filesystem to be used for
+  home directories, and then monitor and occasionally encourage the
+  largest hogs to prune their usage.  This will no doubt take some
+  iteration to get right.
+
+- We also want a shared group-writeable filesystem for collaboration,
+  download of large artifacts, or production of large result sets.  On
+  the order of 10 TB, writeable by all users of the cluster, seems
+  appropriate to me.  Again, this may change depending on observed
+  needs.  Once again, though, we would reiterate that the JupyterLab
+  platform is intended for rapid prototyping, hypothesis testing, and
+  quick iteration; for large-scale bulk computation or catalogue
+  production, the batch system is probably more appropriate.
+
+- The current prototype system provides persistent UID mapping--at the
+  moment, a user's UID is simply that user's GitHub numeric ID, and
+  their GIDs are the IDs of their GitHub Organizations.  It may be
+  necessary to construct some other UID/GID mapping, but at any given
+  cluster, or any set of clusters that share a filesystem, it will be
+  necessary for the same user to always resolve to the same UID and set
+  of GIDs.  This is not a difficult problem with a network filesystem,
+  but the filesystem chosen must allow effectively POSIX permission
+  semantics.  The current prototype is using NFSv4; we suspect that Ceph
+  makes more sense as a production filesystem, but our actual position
+  is that the choice of filesystem is an implementation detail of the
+  cluster, and anything that allows users with persistent UIDs and GIDs
+  to behave as if they were using a traditional Unix filesystem will be
+  fine.
+
+- The authentication system must also, of course, provide consistent
+  UIDs and GIDs at least within the scope of a shared filesystem.  If we
+  continue to use GitHub as a source of authentication truth (which
+  seems to make sense as long as it is our source code control system of
+  record, as it currently is) then we get *globally* consistent
+  UIDs/GIDs, which is nice.
+
+- GKE currently provides 100GB of local storage per node.  Each
+  container image takes about 10GB, but once running, a container has
+  very modest storage needs (excluding user data).  100GB seems entirely
+  adequate if we expect to have at most five container images at any
+  time, assuming that images are stored on node-local storage.
+
+- A local-to-the-cluster mirror of the container images would probably
+  make first startup time for a given image significantly better, since
+  each image is about 10GB, and making that pull happen over an
+  internal-to-the-data-center network rather than from Docker Hub will
+  reduce the data transfer time, if not the unpacking time.  After an
+  image has been pulled and is resident in local storage, startup times
+  are very fast.
+  
 The JupyterLab Platform and Verification
 ----------------------------------------
 
