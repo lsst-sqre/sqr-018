@@ -105,17 +105,26 @@ Timeline Overview
   We have added a modest amount of persistent storage (NSF pod) to avoid inconveniencing alpha-testers with perennially re-uploading their notebooks and data sets in between redeploys. We have also added a log out button and improved server shutdown.
 
 2017-05-09:
-  The demo instance is up to date with the features in the sandbox instance. 
+  The demo instance is up to date with the features in the sandbox instance.
+
+2017-06-15:
+  We can provide a multiple choice of containers to users (eg. with different versions of the stack). This meant shifting the kernel selection step up into Hub (before it was at the Lab pod level).
+
+2017-06-30:
+  We turned on autoscaling as a test. Everything looks good. As threatened we removed the Python 2 containers now that we have multiple stack versions to test the selector with.  
+
+2017-07-07:
+  We have upstreamed our first patch into JupyterLab :-) It's great to be giving back. Keeping up with the alpha updates is a bit of work right now, but well worth it. 
+
 		   
 Coming Soon-ish
 -------------------
 
-- We're looking into how we can provide a multiple choice of
-  containers to users (eg. with different versions of the stack). This
-  does mean shifting the kernel selection step up into Hub (right now
-  it's at the Lab pod level).
+- Investigate solutions to the "slow spawn" when a new container is available and needs to be downloaded. 
 
 - Investigate addressing usability concerns (github-based workflows)
+
+- Should we make some special auth provisions for workshops etc
 
 
 Repositories
@@ -125,10 +134,14 @@ Code repos for system:
 
 https://github.com/lsst-sqre/jupyterlabdemo :
 	(JupyterLab container provisioning and Kubernetes cofig)
-https://github.com/lsst-sqre/k8s-jupyterlabdemo-nginx :
-	(proxy and Kubernetes config)
 https://github.com/lsst-sqre/ghowlauth :
 	(authenticator)
+https://github.com/lsst-sqre/kubespawner :
+	(Kubernetes container spawner)
+https://github.com/lsst-sqre/labkubespawner :
+	(JupyterLab side of container spawner)
+https://github.com/lsst-sqre/jupyterlab-savequit :
+        (JupyterLab Save-and-Exit menu)
 
 Related
 -------
@@ -186,14 +199,6 @@ Deployment and Scaling
 
 - We will move to automatically provisioning the Hub notebook spin-up menu with the latest LSST containers. 
 
-- We should specify minimum requirements for K8 cluster per user, and reach an estimate of the number of uses at various phases of the project.
-
-  - # of cores scaled by number of concurrent users
-  - # of memory scaled by numbers of concurrent users
-  - # user-private persistent storage by total users
-  - project-shared persistent storage total users or fixed
-  - # node-local non-persistent storage (for the containers) fixed
-
 - Integration with datacenter-side persistent storage (GPFS?)
 
 - Integration with datacenter-side auth
@@ -201,8 +206,43 @@ Deployment and Scaling
   - map of Github ID to NCSA ID (identity mgt)
   - hopefully we can avoid people authing twice but we likely need Github auth for repo operations so    they might have to
 
+Infrastructure Resources
+========================
 
-	
+In this section we specify the resources required to support a deployment of our current JupyterLab system as a function of users, with the expectation that the current design scales well to about 10^2 users; we believe we understand how we can evolve the design to scale to 10^3 users but it's premature optimization at this point.
+
+We will refine our recommendations for infrastructure resources as we study how our deployments hold up to real-world usage; right now these are estimates based on our pre-alpha prototype experience. 
+
+Permissions: admin
+  A Kubernetes cluster **to which we have admin access**.  The cluster administrator will need to be able to create all types of Kubernetes resources: persistent volumes and claims, deployments, configmaps, and daemonsets in particular.  During normal operation, it will frequently be required to replace environment variables and perhaps configmaps in order to expose new Lab builds.  The Hub pod must be able to dynamically create and destroy Lab pods.
+
+CPU capacity: 0.5 < x < 4 cores per concurrent user
+  CPU capacity scales **per concurrent user**.  As a rule of thumb, a half CPU core guaranteed per pod (which would imply a minimum of 50 CPUs for the JupyterLab portion of the cluster if we have 100 concurrent users) with an upper limit of four cores is our current best estimate.  For computation that requires more than four cores, we will eventually require use of the batch system rather than the interactive notebook. 
+
+Memory: 8 GB per user
+  Memory scales **per concurrent user**. No lower bound and an upper bound of perhaps 8GB per user Lab container seems appropriate, although this may be bumped up as we see what stack workflows people tend to engage in. Again, for much larger jobs, we will eventually use batch rather than notebook.
+
+Overall VM size: 6 cores / 16GB RAM per node (guide)
+  Those two previous constraints taken together seem to indicate that an appropriate VM size for a node is something like 6 cores and 16GB. From the Lab perspective, we really don't care: as long as the resources are available, lots of small machines versus a few enormous ones is fairly immaterial, since Kubernetes abstracts the resources away.
+
+Node-local storage: 100GB / node
+  GKE currently provides 100GB of local storage per node.  Each container image takes about 10GB, but once running, a container has very modest storage needs (excluding user data).  100GB seems entirely adequate if we expect to have at most five container images at any time, assuming that images are stored on node-local storage. We highly recommend SSD backing of the nodes for performance.
+  
+Persistent storage: 50 GB / user (beta phase estimate)
+  Storage scales *per user*. Each user needs some amount of persistent storage for notebooks and workspace.  50-100GB per user is probably adequate for this phase of service, although it is a fair guess that a few users will use much more and most users will use almost nothing. We recommend that a fairly large shared filesystem is provisioned for home directories, and usage is monitored to establish actual data usage patterns. For short demos or limited time deployments (eg. to support a workshop) it may be possible to aggressively downsize that estimate depending on the notebooks and data that are expected to be used.
+
+Storage for container cache: 250GB SSD total
+  We believe a local-to-the-cluster mirror of the container images would make first startup time for a given image significantly better (we will be looking into this in detail soon) since each image is about 10GB, and making that pull happen over an internal-to-the-data-center network rather than from Docker Hub will reduce the data transfer time, if not the unpacking time.  After an image has been pulled and is resident in local storage, startup times are very fast.
+
+Shared storage: 10TB
+  We anticipate the need for a shared group-writeable filesystem for collaboration, download of large artifacts, or production of large result sets.  On the order of 10 TB, writeable by all users of the cluster, is our initial estimate.  Again, this may change depending on observed needs.  Once again, though, we would reiterate that the JupyterLab platform is intended for rapid prototyping, hypothesis testing, and quick iteration; for large-scale bulk computation or catalogue production, the batch system is probably more appropriate.
+
+User Management: Allow Github uid mapping (for now)
+  The current prototype system provides a persistent UID mapping shim for this stage of development. A user's UID is simply that user's GitHub numeric ID, and their GIDs are the IDs of their GitHub Organizations.  It may be necessary to construct some other UID/GID mapping, but at any given cluster, or any set of clusters that share a filesystem, it will be necessary for the same user to always resolve to the same UID and set of GIDs.  This is not a difficult problem with a network filesystem, but the filesystem chosen must allow effectively POSIX permission semantics.  The current prototype is using NFSv4; we suspect that Ceph makes more sense as a production filesystem, but our actual position is that the choice of filesystem is an implementation detail of the cluster, and anything that allows users with persistent UIDs and GIDs to behave as if they were using a traditional Unix filesystem will be fine.
+
+  The authentication system must also, of course, provide consistent UIDs and GIDs at least within the scope of a shared filesystem.  While we re using GitHub as a source of authentication truth (which make sense for developers as long as it is our source code control system of record, as it currently is) then we get *globally* consistent UIDs/GIDs without the need for a seperate user management system. Ultimately and for data center deployments we will work with the production auth system. 
+
+  
 The JupyterLab Platform and Verification
 ----------------------------------------
 
