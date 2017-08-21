@@ -116,6 +116,12 @@ Timeline Overview
 2017-07-07:
   We have upstreamed our first patch into JupyterLab :-) It's great to be giving back. Keeping up with the alpha updates is a bit of work right now, but well worth it. 
 
+2017-08-16:
+  Another pull request, this time for OAuth2 and GitHub, to allow token
+  caching, is approved and waiting for merge.  We now no longer need any
+  repositories other than lsst-sqre/jupyterlabdemo and
+  jupyterlab-savequit--our authenticator, spawner, and login handler
+  subclasses are handled in JupyterHub configuration.
 		   
 Coming Soon-ish
 -------------------
@@ -134,12 +140,6 @@ Code repos for system:
 
 https://github.com/lsst-sqre/jupyterlabdemo :
 	(JupyterLab container provisioning and Kubernetes cofig)
-https://github.com/lsst-sqre/ghowlauth :
-	(authenticator)
-https://github.com/lsst-sqre/kubespawner :
-	(Kubernetes container spawner)
-https://github.com/lsst-sqre/labkubespawner :
-	(JupyterLab side of container spawner)
 https://github.com/lsst-sqre/jupyterlab-savequit :
         (JupyterLab Save-and-Exit menu)
 
