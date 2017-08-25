@@ -54,7 +54,7 @@
 SQuaRE’s JupyterLab Demo
 ========================
 
-This is an "evolving strawman design" document based on prototyping activities undertaken by SQuaRE to support Science Platform development.
+This is an "evolving strawman design" document based on prototyping activities undertaken by SQuaRE to support Science Platform development. It is not yet baselined
 
 Glossary
 --------
