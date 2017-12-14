@@ -47,8 +47,6 @@
 
 .. note::
 
-   **This technote is not yet published.**
-
    A frequently updated note on SQuaRE’s JupyterLab prototyping
 
 SQuaRE’s JupyterLab Demo
@@ -98,7 +96,7 @@ At the most recent point in the timeline above, we have:
    alpha-testers to keep notebooks around in between redeployments.
   
 
-.. figure:: /_static/jupyterlab.png
+.. figure:: /_static/jupyterlab_sp.png
 	:name: fig-arch
 
 
