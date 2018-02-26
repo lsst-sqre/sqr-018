@@ -139,7 +139,7 @@ Coming Soon-ish
 
 - Migrate our configuration to a Helm chart.  We may at that point
   attempt to more closely track what `Zero To
-  JupyterHub<https://github.com/jupyterhub/zero-to-jupyterhub-k8s/>` _ does.
+  JupyterHub <https://github.com/jupyterhub/zero-to-jupyterhub-k8s/>`_ does.
 
 
 Repositories
