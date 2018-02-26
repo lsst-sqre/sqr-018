@@ -58,7 +58,7 @@ This is an "evolving strawman design" document based on prototyping activities u
 Glossary
 --------
 
-- JupyterLab is an extension of the Jypyter notebook platform that provides an extensible workspace in which users build custom interactive science workflow environments.
+- JupyterLab is an extension of the Jupyter notebook platform that provides an extensible workspace in which users build custom interactive science workflow environments.
 - JupyterHub is a server for spawning Jupyter notebooks and now JupyterLab environments.
 - Kubernetes is a container orchestration platform.
 - GKE (Google Container Engine) is a cloud-hosted kubernetes service.
@@ -79,7 +79,8 @@ At the most recent point in the timeline above, we have:
 -  Authentication via OAuth2 to NCSA via the CILogon service.
 -  Consistent Unix uid/gid mapping for users using GitHub as a shim (your user id is your github id, your groups are the orgs you belong to).
 -  We have a modest amount of persistent storage via an NFS pod to allow alpha-testers to keep notebooks around in between redeployments.
-  
+-  A tool to do one-command deployment of a cluster; this tool allows customization either through environment variables, command-line flags, or by generating a set of Kubernetes configurations which are then available for manual editing before deployment.
+
 
 .. figure:: /_static/jupyterlab_sp.png
 	:name: fig-arch
@@ -124,7 +125,10 @@ Timeline Overview
   Another pull request, this time for OAuth2 and GitHub, to allow token caching, is approved and waiting for merge.  We now no longer need any repositories other than lsst-sqre/jupyterlabdemo and jupyterlab-savequit--our authenticator, spawner, and login handler subclasses are handled in JupyterHub configuration.
 
 2017-12-13:
-  Much work has happened since the last update.  A prepuller DaemonSet has been added to keep downloaded container images up-to-date, and the list presented at login time is automatically updated from the repository container set.  We have integration with NCSA OAuth2 via CILogon (although there is coordination required for UID/GID determination).  There is now an automated deployment process that can use either interactive prompts, a YAML document, or environment variables to drive the deployment.  A basic directory layout for LSST-provided notebooks has been agreed to.  A repository containing standard notebooks has been defined, and it is populated/refreshed for each container at login time.  Workshops and similar things will, for the time being, use GitHub organizations to access control.  All currently appropriate patches have been accepted upstream. 
+  Much work has happened since the last update.  A prepuller DaemonSet has been added to keep downloaded container images up-to-date, and the list presented at login time is automatically updated from the repository container set.  We have integration with NCSA OAuth2 via CILogon (although there is coordination required for UID/GID determination).  There is now an automated deployment process that can use either interactive prompts, a YAML document, or environment variables to drive the deployment.  A basic directory layout for LSST-provided notebooks has been agreed to.  A repository containing standard notebooks has been defined, and it is populated/refreshed for each container at login time.  Workshops and similar things will, for the time being, use GitHub organizations to access control.  All currently appropriate patches have been accepted upstream.
+
+2018-02-26:
+  The prepuller has been rewritten to not require mapping the Docker socket, which makes it able to run without privilege and to be independent of the underlying host OS.  Systems Engineering and EPO are now running minor variants of the Demo environment for their own needs.  JupyterLab Beta has been released and we have adopted it.  Bokeh accepted our PR to jupyterlab_bokeh, so that's another upstream project we are now contributing to.  We are on track to close about another 40 story points on this epic at the end of the month.
 		   
 Coming Soon-ish
 -------------------
@@ -132,6 +136,8 @@ Coming Soon-ish
 - Chain together OAuth providers, so that we can use NCSA for go/no-go decisions, but still consult GitHub to get a token for magic HTTPS pushes and git configuration.
 
 - Investigate addressing usability concerns (github-based workflows)
+
+- Migrate our configuration to a Helm chart.  We may at that point attempt to more closely track what `Zero To JupyterHub<https://github.com/jupyterhub/zero-to-jupyterhub-k8s/>`_ does.
 
 
 Repositories
@@ -305,7 +311,7 @@ Milestones
 +-----------+----------------+-----------------------------------------------------------------+-----------+
 | 2018-10   | \* all         | Production hardening (inc. rapid deployment)                    |           |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2019-06   |                | Notebook-as-softeware (inc CI and deployment) critical review   |           |
+| 2019-06   |                | Notebook-as-software (inc CI and deployment) critical review   |           |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
 | 2019-08   | \* Pipelines   | Science Verification/Validation usecases fully defined          |           |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
