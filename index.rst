@@ -137,7 +137,9 @@ Coming Soon-ish
 
 - Investigate addressing usability concerns (github-based workflows)
 
-- Migrate our configuration to a Helm chart.  We may at that point attempt to more closely track what `Zero To JupyterHub<https://github.com/jupyterhub/zero-to-jupyterhub-k8s/>`_ does.
+- Migrate our configuration to a Helm chart.  We may at that point
+  attempt to more closely track what `Zero To
+  JupyterHub<https://github.com/jupyterhub/zero-to-jupyterhub-k8s/>` _ does.
 
 
 Repositories
