@@ -11,6 +11,8 @@
 SQR-018 Investigations into JupyterLab as a basis for the LSST Science Platform
 ###############################################################################
 
+TEST
+
 A frequently updated note on SQuaRE’s JupyterLab prototyping
 
 View this technote at https://sqr-018.lsst.io or see a preview of the current version in `this repo`_.
