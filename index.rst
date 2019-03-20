@@ -49,10 +49,11 @@
 
    A frequently updated note on SQuaRE’s JupyterLab prototyping
 
-SQuaRE’s JupyterLab Demo
-========================
+SQuaRE’s JupyterLab Environment
+===============================
 
-This is an "evolving strawman design" document based on prototyping activities undertaken by SQuaRE to support Science Platform development. It is not yet baselined.
+This is an "evolving strawman design" document based on prototyping
+activities undertaken by SQuaRE to support Science Platform development. It is not yet baselined.
 
 
 Glossary
