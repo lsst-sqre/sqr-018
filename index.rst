@@ -71,7 +71,7 @@ SQuaRE Technical Status
 
 At the most recent point in the timeline above, we have:
 
--  An experimental sandbox at nublado.lsst.codes (*not* a stable service; frequently redeployed with no notice; functionality subject to change).
+-  An experimental sandbox at jupyterlabdemo.lsst.codes (*not* a stable service; frequently redeployed with no notice; functionality subject to change).
 -  A Dockerfile for installing JupyterHub and JupyterLab components onto our LSST stack container and exposing the stack kernel to Jupyter.
 -  A Kubernetes configuration to deploy this service on the GKE cluster.
 -  An environment-driven or interactive process for deployment of a JupyterLab demo cluster.
@@ -130,71 +130,25 @@ Timeline Overview
 
 2018-02-26:
   The prepuller has been rewritten to not require mapping the Docker socket, which makes it able to run without privilege and to be independent of the underlying host OS.  Systems Engineering and EPO are now running minor variants of the Demo environment for their own needs.  JupyterLab Beta has been released and we have adopted it.  Bokeh accepted our PR to jupyterlab_bokeh, so that's another upstream project we are now contributing to.  We are on track to close about another 40 story points on this epic at the end of the month.
-
-2019-03-20:
-  Wow, where to start?  In no particular order, a non-exhaustive list:
-
-  - "Nublado" is the internal name for the Hub/Lab/Kubernetes environment that makes up the Notebook Aspect of the LSST Science Platform.
-  - The increasingly-inaccurately-named "jupyterlabdemo" has been retired in favor of "nublado."
-  - User containers spawn in their own namespaces.
-  - The user namespaces have individual resource quotas.
-  - Support for authentication with pre-provided JWT headers has been added.
-  - Experimental Dask support has been added for workload parallelization.
-  - The user proxy and the Hub have been split into separate deployments, so a Hub restart has no effect at all on the user experience of someone with an active notebook container.
-  - We gave a well-received presentation at JupyterCon 2018.
-  - Proxy support inside the user notebook has been added, so that we can do things like display Dask worker dashboards to the user.
-  - Mounted filesystems have been externalized to a ConfigMap document, so that mounted volumes can be updated as a very minor configuration change.
-  - CILogon provides correct group information with the NCSA identity provider, and is therefore a fully-supported authentication source.
-  - Federated authentication is available via CILogon (if additional identities are registered with the NCSA Identity Provider).
-  - A Terraform deployment structure has been added.  When it reaches feature parity with our custom deployment tool, it will become the recommended method of deployment.
-  - We now use RBAC for fine-grained permissions within the Nublado environment.
-  - The Lab container does not start as root; it has a "provisionator" user that is allowed to run a few privileged commands to set up the actual user as whom to run, and that's all.
-  - Various components can be pinned to particular node labels, so we can restrict infrastructure, firefly, Lab, or Dask pods to particular nodes.
-  - Firefly JupyterLab widget has been added to the environment.
-  - Many more visualization and analysis tools, such as Vaex, bqplot/ipyvolume, datashader, etc., have been added to the environment.
-  - Better LaTeX support.
-  - The user experience for shell users in the Terminal has been improved.
-  - Much upstreaming of our work and integration with the Jupyter, Dask, and Bokeh communities.
-
-Coming Eventually
-=================
-
-- End-to-end automated deployment testing.
-
-- Better automated notebook testing.
-
-- Better integration with Portal and DAX components of the Science Platform.
-
-- Split repository into build and deployment pieces.
-
-- Full-featured Terraform deployment.
+		   
+Coming Soon-ish
+-------------------
 
 - Chain together OAuth providers, so that we can use NCSA for go/no-go decisions, but still consult GitHub to get a token for magic HTTPS pushes and git configuration.
 
-- Investigate addressing usability concerns (github-based workflows).
+- Investigate addressing usability concerns (github-based workflows)
+
+- Migrate our configuration to a Helm chart.  We may at that point attempt to more closely track what `Zero To JupyterHub <https://github.com/jupyterhub/zero-to-jupyterhub-k8s/>`_ does.
 
 Repositories
 ------------
 
 Code repos for system:
 
-https://github.com/lsst-sqre/nublado :
+https://github.com/lsst-sqre/jupyterlabdemo :
 	(JupyterLab container provisioning and Kubernetes cofig)
-
 https://github.com/lsst-sqre/jupyterlab-savequit :
         (JupyterLab Save-and-Exit menu)
-
-https://github.com/lsst-sqre/namespacedkubespawner :
-        (K8s spawner that can put user pods into individual namespaces)
-
-https://github.com/lsst-sqre/jupyterhubutils :
-        (Hub utilities, mostly around scanning Docker repositories for images)
-
-https://github.com/lsst-sqre/jupyterlabutils :
-        (Lab utilities: mostly around proxying cluster resources to the user)
-
-https://github.com/lsst-sqre/jupyterlab-lsstquery :
-        (Lab extension to create a templated notebook from a query)
 
 Related
 -------
@@ -206,7 +160,7 @@ https://github.com/lsst-dm/tutorial-lsst2017 :
         (Large tutorial example from LSST All-Hands 2017)
 
 https://github.com/lsst-sqre/notebook-demo :
-        (Automatically updated notebooks for Lab environment)
+        (Placeholder for automatically updated notebooks for Lab environment)
  
 Science Platform Design Discussion and Forward Look
 ===================================================
@@ -249,19 +203,21 @@ Major Issues
   We strongly favour the latter approach but it has implications on other parts of the DM Subsystem that need to be discussed.
 
   
-- Interface to the batch system: Right now the baseline is that some kind of user intervention will have to happen to go from a satisfactory notebook to running the same code over large datasets through the batch system. This presents significant usability challenges. If the workflow system would present an interface that allows optimized idempotent execution of notebooks ("you just asked me to do a job with this configuration and these inputs; I recognise that I have already executed such a job so I will return the results to you right away as a no-op") the usability will be vastly improved. We do not know whether such an interface can be provided at this stage.
+- Intereface to the batch system: Right now the baseline is that some kind of user intervention will have to happen to go from a satisfactory notebook to running the same code over large datasets through the batch system. This presents significant usability challenges. If the workflow system would present an interface that allows optimized idempotent execution of notebooks ("you just asked me to do a job with this configuration and these inputs; I recognise that I have already executed such a job so I will return the results to you right away as a no-op") the usability will be vastly improved. We do not know whether such an interface can be provided at this stage.
 
 
 Deployment and Scaling
 ----------------------
 
-- We need to settle on a system for managing our kubernetes applications. This is likely to be Terraform. 
+- We need to settle on a system for managing our kubernetes applications. This is likely to be Terraform for virtual machine and external DNS provisioning, and Helm for kubernetes configuration. Some custom scheduling logic will be needed, because in configuration of the cluster, some later steps depend on values not generated until earlier steps have complted.
 
 - Integration with datacenter-side persistent storage (GPFS?).  This currently seems to be more likely to be GPFS-exported-as-NFS.
 
 - Integration with datacenter-side auth
 
-    - We would like to be able to chain OAuth2 providers and pass GitHub token
+  - map of GitHub ID to NCSA ID (identity mgt)
+
+    - Ideally we just chain OAuth2 providers and pass GitHub token
       information along with the CILogon-provided UID/GID data.
 
 Infrastructure Resources
@@ -283,8 +239,8 @@ Memory: 8 GB per user
 Overall VM size: 6 cores / 16GB RAM per node (guide)
   Those two previous constraints taken together seem to indicate that an appropriate VM size for a node is something like 6 cores and 16GB. From the Lab perspective, we really don't care: as long as the resources are available, lots of small machines versus a few enormous ones is fairly immaterial, since Kubernetes abstracts the resources away.
 
-Node-local storage: 200GB / node
-  GKE currently provides 200GB of local storage per node.  Each container image takes about 10GB, but once running, a container has very modest storage needs (excluding user data).  200GB seems entirely adequate if we expect to have fewer than ten container images at any time, assuming that images are stored on node-local storage. We highly recommend SSD backing of the nodes for performance.
+Node-local storage: 100GB / node
+  GKE currently provides 100GB of local storage per node.  Each container image takes about 10GB, but once running, a container has very modest storage needs (excluding user data).  100GB seems entirely adequate if we expect to have at most five container images at any time, assuming that images are stored on node-local storage. We highly recommend SSD backing of the nodes for performance.
   
 Persistent storage: 50 GB / user (beta phase estimate)
   Storage scales *per user*. Each user needs some amount of persistent storage for notebooks and workspace.  50-100GB per user is probably adequate for this phase of service, although it is a fair guess that a few users will use much more and most users will use almost nothing. We recommend that a fairly large shared filesystem is provisioned for home directories, and usage is monitored to establish actual data usage patterns. For short demos or limited time deployments (eg. to support a workshop) it may be possible to aggressively downsize that estimate depending on the notebooks and data that are expected to be used.
