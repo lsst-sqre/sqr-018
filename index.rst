@@ -72,6 +72,8 @@ SQuaRE Technical Status
 At the most recent point in the timeline above, we have:
 
 -  An experimental sandbox at nublado.lsst.codes (*not* a stable service; frequently redeployed with no notice; functionality subject to change).
+-  An experimental instance at lsst-lsp-int.ncsa.illinois.edu (*not* a stable service; frequently redeployed with no notice; functionality subject to change).
+-  A marginally-less-experimental instance at lsst-lsp-stable.ncsa.illinois.edu (best-effort for stability; some warning given prior to redeployment; functionality subject to change).
 -  A Dockerfile for installing JupyterHub and JupyterLab components onto our LSST stack container and exposing the stack kernel to Jupyter.
 -  A Kubernetes configuration to deploy this service on the GKE cluster.
 -  An environment-driven or interactive process for deployment of a JupyterLab demo cluster.
