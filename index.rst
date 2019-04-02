@@ -52,8 +52,11 @@
 SQuaRE’s JupyterLab Environment
 ===============================
 
-This is an "evolving strawman design" document based on prototyping
-activities undertaken by SQuaRE to support Science Platform development. It is not yet baselined.
+This is an informal evolving design document capturing a running
+narrative of our current best thinking for the design and
+implementation of the Notebook Aspect of the LSST Science Platform.
+
+This design is not yet offically baselined. 
 
 
 Glossary
@@ -69,24 +72,30 @@ Glossary
 SQuaRE Technical Status
 -----------------------
 
-At the most recent point in the timeline above, we have:
+As of this document's most recent update, we have:
 
--  An experimental sandbox at nublado.lsst.codes (*not* a stable service; frequently redeployed with no notice; functionality subject to change).
--  An experimental instance at lsst-lsp-int.ncsa.illinois.edu (*not* a stable service; frequently redeployed with no notice; functionality subject to change).
--  A marginally-less-experimental instance at lsst-lsp-stable.ncsa.illinois.edu (best-effort for stability; some warning given prior to redeployment; functionality subject to change).
+-  A developer sandbox deployed on GKE as nublado.lsst.codes (*not* a stable service; frequently redeployed with no notice; functionality subject to change). We use GKE as a rapid deploy/test platform for SQuaRE developers as well as for ad-hoc deployments for demos, turorials, workshop and the like. 
+-  An integration environment instance deployed as lsst-lsp-int.ncsa.illinois.edu at the LSST Data Facility (LDF) in Illinois (*not* a stable service; frequently redeployed with no notice; functionality subject to change). This is the deployment in which LSP developers across all teams are using as a staging environment to test new versions. 
+-  A lower volatility instance deployed as  lsst-lsp-stable.ncsa.illinois.edu at the LDF (best-efforts stability; some warning given prior to redeployment; functionality subject to change). This is the deployment targeted at project users, as well as trusted early access testers such as the Stack Club.
 -  A Dockerfile for installing JupyterHub and JupyterLab components onto our LSST stack container and exposing the stack kernel to Jupyter.
 -  A Kubernetes configuration to deploy this service on the GKE cluster.
 -  An environment-driven or interactive process for deployment of a JupyterLab demo cluster.
--  Our deployment involves JupyterHub spawning JupyterLabs in individual pods based on a SQuaRE’s CI-built Docker container distribution of the stack.
--  Authentication to this service via SQuaRE’s usual “shim” authentication mechanism that uses GitHub organization membership for OAuth authentication
--  Authentication via OAuth2 to NCSA via the CILogon service.
+-  Our deployment involves JupyterHub spawning JupyterLabs in individual pods based on a SQuaRE’s CI-built Docker container distribution of the stack. Recently we have augmented this by running pods in individual Kubernetes namespaces in order to further isolate users from each other. 
+-  Authentication to this service via SQuaRE’s usual “shim” authentication mechanism that uses GitHub organization membership for OAuth authentication. Authentication via OAuth2 to NCSA is done via the CILogon service.
 -  Consistent Unix uid/gid mapping for users using GitHub as a shim (your user id is your github id, your groups are the orgs you belong to).
--  We have a modest amount of persistent storage via an NFS pod to allow alpha-testers to keep notebooks around in between redeployments.
+-  At GKE We have a modest amount of persistent storage via NFS to allow alpha-testers to keep notebooks around in between redeployments. At the LDF we have access to not only home spaces but also large shared dataset spaces via NFS (backed by GPFS). 
 -  A tool to do one-command deployment of a cluster; this tool allows customization either through environment variables, command-line flags, or by generating a set of Kubernetes configurations which are then available for manual editing before deployment.
+- We have the ability to support pythonic parallel computations via the dask framework
+- We have a number of usablity features, from a library of pre-populated notebooks demostrating key features to the ability to save all notebooks before exit.
+- We have accumulated significant experience with exposing users of a large range of sophistication and motivations to the service. We have also done small scaling tests to test the system behaves as we would expect in its current implementation. 
 
+In the diagrams we show the same system deployed on two different infrastructures (on commodity cloud on Google's Kuberenetes environment and on our LDF in-house Kubernetes at NCSA). Although the two deployments consume different services, they are the same codebase. 
 
-.. figure:: /_static/jupyterlab_sp.png
-	:name: fig-arch
+.. figure:: /_static/nublado_gke.png
+	:name: fig-arch-gke
+
+.. figure:: /_static/nublado_ldf.png
+   :name: fig-arch-ldf
 
 
 Timeline Overview
@@ -134,7 +143,8 @@ Timeline Overview
   The prepuller has been rewritten to not require mapping the Docker socket, which makes it able to run without privilege and to be independent of the underlying host OS.  Systems Engineering and EPO are now running minor variants of the Demo environment for their own needs.  JupyterLab Beta has been released and we have adopted it.  Bokeh accepted our PR to jupyterlab_bokeh, so that's another upstream project we are now contributing to.  We are on track to close about another 40 story points on this epic at the end of the month.
 
 2019-03-20:
-  Wow, where to start?  In no particular order, a non-exhaustive list:
+
+ This is a summary of developments in the last year:
 
   - "Nublado" is the internal name for the Hub/Lab/Kubernetes environment that makes up the Notebook Aspect of the LSST Science Platform.
   - The increasingly-inaccurately-named "jupyterlabdemo" has been retired in favor of "nublado."
@@ -246,10 +256,9 @@ Major Issues
 
   - request a generalised python interface to both;
 
-  - have the EFD data be availabe through the DAX in timescales short enough to satisfy the commissioning team and only support one way of accessing EFD data.
+  - have the EFD data be availabe to notebook users in timescales short enough to satisfy the commissioning team and only support one way of accessing EFD data.
 
-  We strongly favour the latter approach but it has implications on other parts of the DM Subsystem that need to be discussed.
-
+  We strongly favoured the latter approach, proposed a design to achieve this (DMTN-082), and implemented a prototype for evaluation (SQR-029).  
   
 - Interface to the batch system: Right now the baseline is that some kind of user intervention will have to happen to go from a satisfactory notebook to running the same code over large datasets through the batch system. This presents significant usability challenges. If the workflow system would present an interface that allows optimized idempotent execution of notebooks ("you just asked me to do a job with this configuration and these inputs; I recognise that I have already executed such a job so I will return the results to you right away as a no-op") the usability will be vastly improved. We do not know whether such an interface can be provided at this stage.
 
@@ -320,44 +329,45 @@ Integration with Developer/User Services
 
 - Production hardening: During commissioning rapid partial or whole re-deployment of assets is likely to be needed frequently and/or at short notice. While we are designing with this in mind, we have a target date for demonstrating this capability and improving on any bottlenecks (which may be in other components, in particular the CI chain).
 
-Milestones
-----------
+
+Roadmap
+-------
 
 
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| Planned   | ETA            | Milestone                                                       | Met       |
+| Planned   | Dependencies   | Milestone                                                       | Status    |
 +===========+================+=================================================================+===========+
-| 2017-07   |                | Alpha deployment of JupyterHub/JupyterLab                       | 2017-05   |
+| 2017-07   |                | Alpha deployment of JupyterHub/JupyterLab                       | met       |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2017-08   |                | Continuous provisioning of stack containers from CI             | 2017-09   |
+| 2017-08   |                | Continuous provisioning of stack containers from CI             | met       |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2017-08   | \* all         | Hardware/Resource specification estimate                        |           |
+| 2017-08   | \* all         | Hardware/Resource specification estimate                        | met       |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2017-09   |                | Commissioning 2-3 banner usecases selected                      |           |
+| 2017-09   |                | Commissioning 2-3 banner usecases selected                      | ongoing   |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
 | 2017-09   |                | automated k8s provisioning                                      | 2017-12   |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2017-10   | \* IPAC        | Understand interaction with SUI Portal and/or Firefly           |           |
+| 2017-10   | \* IPAC        | Understand interaction with SUI Portal and/or Firefly           | met       |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2017-10   |                | Informal Design Review of JupyterLab architecture               |           |
+| 2017-10   |                | Informal Design Review of JupyterLab architecture               | met       |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2017-10   |                | LTD support                                                     |           |
+| 2017-10   |                | LTD support                                                     | prototype |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2017-11   | \* NCSA        | Integration with data center resources                          |           |
+| 2017-11   | \* NCSA        | Integration with data center resources                          | met       |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2017-12   | \* NCSA        | Beta service deployed scaled up for DM in-project use           |           |
+| 2017-12   | \* NCSA        | Beta service deployed scaled up for DM in-project use           | met       |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2018-01   | \* NCSA        | EFD interface design baselined                                  |           |
+| 2018-01   | \* NCSA        | EFD interface design baselined                                  | supercede |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
 | 2018-02   | \* SysEng      | Full set of comissioning usecases fully defined                 |           |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2018-06   |                | "Son of SQuaSH" verification dashboards deployed                |           |
+| 2018-06   |                | "Son of SQuaSH" verification dashboards deployed                | underway  |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
 | 2018-08   | \* NCSA        | Batch interface design baselined                                |           |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2018-10   | \* all         | Production hardening (inc. rapid deployment)                    |           |
+| 2018-10   | \* all         | Production hardening (inc. rapid deployment)                    | ongoing   |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
-| 2019-06   |                | Notebook-as-software (inc CI and deployment) critical review    |           |
+| 2019-06   |                | Notebook-as-software (inc CI and deployment) features           | prototype |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
 | 2019-08   | \* Pipelines   | Science Verification/Validation usecases fully defined          |           |
 +-----------+----------------+-----------------------------------------------------------------+-----------+
